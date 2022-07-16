@@ -1,4 +1,4 @@
-module gitlab.xunlei.cn/Notifier/Notifier
+
 
 go 1.18
 
