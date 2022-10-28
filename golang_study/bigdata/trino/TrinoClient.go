@@ -17,8 +17,11 @@ type result struct {
 golang 连接 trino
 */
 func main() {
-	//dsn := "https://user:password@trino_server:7778?SSLCertPath=/path/to/trino.pem&catalog=hive&schema=default"
+	//args := os.Args
+	//cert_path := args[1]
+	//dsn := fmt.Sprintf("https://user:password@trino_server:7778?SSLCertPath=%s&catalog=hive&schema=default", cert_path)
 	dsn := "http://user:password@localhost:8080?catalog=tpch&schema=sf1"
+	fmt.Println("conn url: " + dsn)
 	db, err := sql.Open("trino", dsn)
 
 	var r result
