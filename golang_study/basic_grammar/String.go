@@ -8,6 +8,7 @@ import (
 func main() {
 	strConcat()
 	splitStr()
+	replaceStr()
 }
 
 func strConcat() {
@@ -25,6 +26,14 @@ func splitStr() {
 		for i := range sp {
 			fmt.Println(sp[i])
 		}
+		fmt.Println(fmt.Sprintf("%s:%s", sp[1], sp[2]))
 	}
-
 }
+
+func replaceStr()  {
+	s := "Uncaught SyntaxError: Unexpected token '?'"
+	if strings.ContainsAny(s, "'"){
+		fmt.Println(strings.Replace(s, "'", "\"", -1))
+	}
+}
+
