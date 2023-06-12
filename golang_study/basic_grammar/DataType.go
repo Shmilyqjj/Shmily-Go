@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 /*
 1	布尔型 布尔型的值只可以是常量 true 或者 false。一个简单的例子：var b bool = true。
@@ -44,6 +47,8 @@ func main() {
 	goBoolean()
 	defaultValue()
 	variableDeclaration()
+	compute()
+	str2int()
 }
 
 func defaultValue() {
@@ -76,4 +81,24 @@ func variableDeclaration() {
 		vg2 bool
 	)
 	fmt.Printf("%d %v \n", vg1, vg2)
+}
+
+func compute()  {
+	int1 := 1
+	int2 := 3
+	fmt.Println(float32(int1)/float32(int2))
+
+	// 计算百分比 保留三位小数
+	f, _ := strconv.ParseFloat(fmt.Sprintf("%.3f", float32(int1)/float32(int2)*100), 64)
+	fmt.Println(f)
+
+}
+
+func str2int() {
+	v := "1111"
+	atoi, err := strconv.Atoi(v)
+	if err != nil {
+		return
+	}
+	fmt.Println(atoi)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -11,8 +12,13 @@ func main() {
 	for i := 1; i <= 100000; i++ {
 		l.PushBack(i)
 	}
-	batchSize := 1000
-	forBatch(l, batchSize)
+	//batchSize := 1000
+	//forBatch(l, batchSize)
+
+	forRangeListMap()
+	fmt.Println(map2String(map[string]string{"name": "John", "age": "30"}))
+	fmt.Println(string2Map("k1=v1,k2=v2,k3=v3"))
+
 }
 
 // 按固定批次大小拆分数据并协程处理
@@ -50,4 +56,47 @@ func forBatch(l *list.List, batchSize int) {
 		select {}
 	}
 
+}
+
+func forRangeListMap(){
+	Data := []map[string]string{
+		{"name": "John", "age": "30"},
+		{"name": "Alice", "age": "25"},
+		{"name": "Bob", "age": "35"},
+	}
+
+	// 遍历切片中的每个 map
+	for _, m := range Data {
+		// 遍历 map 中的键值对
+		for key, value := range m {
+			fmt.Printf("键：%s，值：%s\n", key, value)
+		}
+		fmt.Println("--------------------")
+	}
+}
+
+func map2String(m map[string]string) string {
+	l := make([]string, len(m))
+	i := 0
+	for k, v := range m {
+		l[i] = fmt.Sprintf("%s=%s", k, v)
+		i++
+	}
+	return strings.Join(l, ",")
+}
+
+
+func string2Map(s string) map[string]string {
+	// k1=v1,k2=v2转map
+	sp := strings.Split(s, ",")
+	m := make(map[string]string, len(sp))
+	for _, pair := range sp {
+		keyValue := strings.Split(pair, "=")
+		if len(keyValue) == 2 {
+			key := keyValue[0]
+			value := keyValue[1]
+			m[key] = value
+		}
+	}
+	return m
 }
