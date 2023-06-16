@@ -18,7 +18,7 @@ func main() {
 	forRangeListMap()
 	fmt.Println(map2String(map[string]string{"name": "John", "age": "30"}))
 	fmt.Println(string2Map("k1=v1,k2=v2,k3=v3"))
-
+	fmt.Println(splitAndDistinct("1=1,2=2,3=3,3=3,3=3"))
 }
 
 // 按固定批次大小拆分数据并协程处理
@@ -58,7 +58,7 @@ func forBatch(l *list.List, batchSize int) {
 
 }
 
-func forRangeListMap(){
+func forRangeListMap() {
 	Data := []map[string]string{
 		{"name": "John", "age": "30"},
 		{"name": "Alice", "age": "25"},
@@ -85,7 +85,6 @@ func map2String(m map[string]string) string {
 	return strings.Join(l, ",")
 }
 
-
 func string2Map(s string) map[string]string {
 	// k1=v1,k2=v2转map
 	sp := strings.Split(s, ",")
@@ -99,4 +98,18 @@ func string2Map(s string) map[string]string {
 		}
 	}
 	return m
+}
+
+func splitAndDistinct(s string) []string {
+	// split结果去重
+	sp := strings.Split(s, ",")
+	set := make(map[string]struct{})
+	var uniqueElements []string
+	for _, element := range sp {
+		if _, exists := set[element]; !exists {
+			set[element] = struct{}{}
+			uniqueElements = append(uniqueElements, element)
+		}
+	}
+	return uniqueElements
 }
