@@ -13,7 +13,8 @@ type result struct {
 	nationkey int
 }
 
-/**
+/*
+*
 golang 连接 trino
 */
 func main() {

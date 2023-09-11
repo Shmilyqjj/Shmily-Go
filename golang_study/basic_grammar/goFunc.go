@@ -11,7 +11,6 @@ func main() {
 		fmt.Println()
 	}()
 
-
 	sli := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	wg := sync.WaitGroup{}
 	for k, v := range sli {

@@ -30,10 +30,9 @@ func splitStr() {
 	}
 }
 
-func replaceStr()  {
+func replaceStr() {
 	s := "Uncaught SyntaxError: Unexpected token '?'"
-	if strings.ContainsAny(s, "'"){
+	if strings.ContainsAny(s, "'") {
 		fmt.Println(strings.Replace(s, "'", "\"", -1))
 	}
 }
-

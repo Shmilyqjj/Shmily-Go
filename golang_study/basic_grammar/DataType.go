@@ -83,10 +83,10 @@ func variableDeclaration() {
 	fmt.Printf("%d %v \n", vg1, vg2)
 }
 
-func compute()  {
+func compute() {
 	int1 := 1
 	int2 := 3
-	fmt.Println(float32(int1)/float32(int2))
+	fmt.Println(float32(int1) / float32(int2))
 
 	// 计算百分比 保留三位小数
 	f, _ := strconv.ParseFloat(fmt.Sprintf("%.3f", float32(int1)/float32(int2)*100), 64)
