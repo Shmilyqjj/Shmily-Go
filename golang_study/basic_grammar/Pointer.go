@@ -22,6 +22,7 @@ func main() {
 	i1 := changeX(i) // 地址可以直接做入参传入
 	fmt.Println(*i1)
 	fmt.Println(*changeX(new(int))) // new(int) 开辟一块地址 存的值为0
+	fmt.Println(*XAdd(&x, 1))
 }
 
 func errorExample() {
@@ -39,4 +40,9 @@ func changeX(x *int) *int {
 	// 通过使用指针，我们可以传递变量的引用（例如，作为函数的参数），而不是传递变量的副本，从而减少内存使用量并提高效率。
 	*x += 6  // 传入的参数是地址 *x取到值并加6
 	return x // 返回x的地址
+}
+
+func XAdd(x *int, y int) *int {
+	*x = *x + y
+	return x
 }
