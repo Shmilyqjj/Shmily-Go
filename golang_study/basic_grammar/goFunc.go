@@ -17,7 +17,7 @@ func main() {
 		wg.Add(1)
 
 		go func(k, v interface{}) {
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 10)
 			fmt.Println(k, v)
 			wg.Done()
 		}(k, v)

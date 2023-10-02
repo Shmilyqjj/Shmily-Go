@@ -45,6 +45,7 @@ import (
 
 func main() {
 	goBoolean()
+	goStruct()
 	defaultValue()
 	variableDeclaration()
 	compute()
@@ -62,6 +63,19 @@ func defaultValue() {
 func goBoolean() {
 	var b bool = true
 	fmt.Println(b)
+}
+
+func goStruct() {
+	type s struct {
+		X, Y int
+		S    string
+	}
+	sp := &s{
+		X: 1,
+		S: "a",
+	}
+
+	println((*sp).X, (*sp).Y, (*sp).S)
 }
 
 func variableDeclaration() {
