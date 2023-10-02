@@ -1,0 +1,37 @@
+ServerConfig:
+  addr: ""
+  port: 8080
+  read_timeout: 30
+  write_timeout: 30
+  idle_timeout: 5
+  max_conns_per_ip: 5
+  max_idle_worker_duration: 5
+  max_request_body_size: 1048576
+
+KafkaConfigs:
+  - cluster: "cluster_1"
+    brokers: "ip:port"
+    client_id: "client_id1"
+    buffer_size: 1024
+    max_retries: 3
+    flush_bytes: 1048576
+    flush_max_size: 0
+    flush_size: 1000
+    flush_frequency: "3s"
+  - cluster: "cluster_2"
+    brokers: "ip:port"
+    client_id: "client_id2"
+    buffer_size: 1024
+    max_retries: 3
+    flush_bytes: 1048576
+    flush_max_size: 0
+    flush_size: 1000
+    flush_frequency: "3s"
+
+MetaConfig:
+  xml_file: "/xxx/apps.xml"
+  refresh_interval_sec: 300
+  user: "root"
+  password: "123456"
+  host: "localhost"
+  port: 3306

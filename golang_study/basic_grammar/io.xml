@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<apps>
+    <app>
+        <id>1</id>
+        <blcode>1</blcode>
+        <key>abc</key>
+        <kafka>k1</kafka>
+    </app>
+    <app>
+        <id>2</id>
+        <blcode>2</blcode>
+        <key>def</key>
+        <kafka>k2</kafka>
+    </app>
+</apps>
