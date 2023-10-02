@@ -16,10 +16,24 @@ Print 和 Println 这两个函数也支持使用变量，如：fmt.Println(arr)�
 
 import "fmt"
 
+const (
+	h = "Hello"
+	w = "World"
+)
+
 func init() {
 	fmt.Println("hahaha")
 }
 
 func main() {
-	fmt.Println("Hello World" + "!")
+	fmt.Println(h + " " + w + "!")
+	x, y := splitHW()
+	println(x, y, "!")
+}
+
+func splitHW() (x, y string) {
+	// Go 的返回值可被命名，它们会被视作定义在函数顶部的变量。 直接返回语句应当仅用在下面这样的短函数中。在长的函数中它们会影响代码的可读性。
+	x = "Hello"
+	y = "world"
+	return
 }

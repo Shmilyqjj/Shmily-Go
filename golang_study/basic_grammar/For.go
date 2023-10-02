@@ -19,6 +19,8 @@ func main() {
 	fmt.Println(map2String(map[string]string{"name": "John", "age": "30"}))
 	fmt.Println(string2Map("k1=v1,k2=v2,k3=v3"))
 	fmt.Println(splitAndDistinct("1=1,2=2,3=3,3=3,3=3"))
+	forIsTheWhileInGo()
+	infiniteCirculation()
 }
 
 // 按固定批次大小拆分数据并协程处理
@@ -112,4 +114,18 @@ func splitAndDistinct(s string) []string {
 		}
 	}
 	return uniqueElements
+}
+
+func forIsTheWhileInGo() {
+	sum := 1
+	for sum < 1000 {
+		sum = 1 + sum
+	}
+	fmt.Println(sum)
+}
+
+func infiniteCirculation() {
+	for {
+
+	}
 }

@@ -62,7 +62,6 @@ func (s *Service) Init() error {
 }
 
 func (s *Service) Index(ctx *fasthttp.RequestCtx) {
-	//defer s.Metrics.CollectHttpMetrics(time.Now(), "index", ctx, "", "")
 	name := ctx.UserValue("name")
 	ret := "Welcome!"
 	if name != nil {
