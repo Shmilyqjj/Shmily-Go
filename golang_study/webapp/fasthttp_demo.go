@@ -50,6 +50,7 @@ func (s *Service) Init() error {
 		MaxConnsPerIP:                 s.ServerConfig.MaxConnsPerIP,
 		MaxIdleWorkerDuration:         time.Duration(s.ServerConfig.MaxIdleWorkerDuration) * time.Second,
 		MaxRequestBodySize:            s.ServerConfig.MaxRequestBodySize,
+		ReadBufferSize:                65535, // ReadBufferSize 限制header大小 避免报错'Too big request header'
 		DisableHeaderNamesNormalizing: true,
 		DisableKeepalive:              true,
 		Handler:                       router.Handler,
@@ -108,5 +109,8 @@ func main() {
 		MaxRequestBodySize: 10485760,
 	},
 	}
-	s.Init()
+	err := s.Init()
+	if err != nil {
+		panic(err)
+	}
 }
