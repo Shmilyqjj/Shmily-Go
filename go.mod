@@ -6,6 +6,7 @@ require (
 	github.com/Shopify/sarama v1.38.1
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/cloudwego/hertz v0.7.0
+	github.com/google/uuid v1.5.0
 	github.com/mqu/go-notify v0.0.0-20130719194048-ef6f6f49d093
 	github.com/sirupsen/logrus v1.8.1
 	github.com/trinodb/trino-go-client v0.312.0
