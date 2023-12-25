@@ -74,7 +74,8 @@ func goStruct() {
 		X: 1,
 		S: "a",
 	}
-
+	println(sp)
+	fmt.Printf("%v\n", *sp)
 	println((*sp).X, (*sp).Y, (*sp).S)
 }
 

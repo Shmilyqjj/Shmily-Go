@@ -12,6 +12,7 @@ require (
 	github.com/trinodb/trino-go-client v0.312.0
 	github.com/valyala/fasthttp v1.50.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
