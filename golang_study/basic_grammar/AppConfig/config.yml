@@ -40,7 +40,9 @@ EtlConfigs:
     source_kafka_data_protocol: json
     source_kafka_data_explode_keys: ed,qjj  # split by ,
     source_kafka_topic: qjj
-    source_kafka_group: group
+    source_kafka_partitions:
+      - 0
+      - 1
     sink_doris_cluster: doris-cluster-dev
     sink_doris_table: test.qjj_test
     sink_doris_lowercase_column_enabled: true

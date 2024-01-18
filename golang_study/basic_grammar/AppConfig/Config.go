@@ -55,7 +55,7 @@ type EtlConfig struct {
 	SourceKafkaDataProtocol    string             `yaml:"source_kafka_data_protocol"`
 	SourceKafkaDataExplodeKeys string             `yaml:"source_kafka_data_explode_keys"`
 	SourceKafkaTopic           string             `yaml:"source_kafka_topic"`
-	SourceKafkaGroup           string             `yaml:"source_kafka_group"`
+	SourceKafkaPartitions      []string           `yaml:"source_kafka_partitions"`
 	SinkDorisCluster           string             `yaml:"sink_doris_cluster"`
 	SinkDorisTable             string             `yaml:"sink_doris_table"`
 	SinkDorisColLower          bool               `yaml:"sink_doris_lowercase_column_enabled"`
