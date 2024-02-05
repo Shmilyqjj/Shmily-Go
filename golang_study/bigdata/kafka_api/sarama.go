@@ -1,4 +1,4 @@
-package kafka
+package kafka_api
 
 import (
 	"fmt"
@@ -14,12 +14,12 @@ import (
 
 var kafkaBrokers = "broker1:9092,broker2:9092,broker3:9092"
 
-// 消费者
-func Consumer() {
+func SaramaConsumer() {
+	// sarama消费者
 	var wg sync.WaitGroup
 	consumer, err := sarama.NewConsumer([]string{kafkaBrokers}, nil)
 	if err != nil {
-		fmt.Println("Failed to start consumer: %s", err)
+		fmt.Printf("Failed to start consumer: %v \n", err)
 		return
 	}
 	partitionList, err := consumer.Partitions("test") //获得该topic所有的分区
@@ -31,13 +31,13 @@ func Consumer() {
 	for partition := range partitionList {
 		pc, err := consumer.ConsumePartition("test", int32(partition), sarama.OffsetNewest)
 		if err != nil {
-			fmt.Println("Failed to start consumer for partition %d: %s\n", partition, err)
+			fmt.Printf("Failed to start consumer for partition %d: %v \n", partition, err)
 			return
 		}
 		wg.Add(1)
 		go func(sarama.PartitionConsumer) { //为每个分区开一个go协程去取值
 			for msg := range pc.Messages() { //阻塞直到有值发送过来，然后再继续等待
-				fmt.Printf("Partition:%d, Offset:%d, key:%s, value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
+				fmt.Printf("Partition=%d, Offset=%d, key=%s, value=%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
 			}
 			defer pc.AsyncClose()
 			wg.Done()
@@ -46,8 +46,8 @@ func Consumer() {
 	wg.Wait()
 }
 
-// 同步生产者
-func SyncProducer() {
+func SaramaSyncProducer() {
+	// sarama同步生产者
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll          //赋值为-1：这意味着producer在follower副本确认接收到数据后才算一次发送完成。
 	config.Producer.Partitioner = sarama.NewRandomPartitioner //写到随机分区中，默认设置8个分区
@@ -70,8 +70,8 @@ func SyncProducer() {
 	fmt.Printf("分区ID:%v, offset:%v \n", pid, offset)
 }
 
-// 异步生产者
-func AsyncProducer() {
+func SaramaAsyncProducer() {
+	// sarama异步生产者
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true //必须有这个选项
 	config.Producer.Timeout = 5 * time.Second
