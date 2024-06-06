@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// confluent-kafka-go配置参考librdkafka的配置https://docs.confluent.io/platform/current/clients/librdkafka/html/md_CONFIGURATION.html
+
 const (
 	INT32_MAX = 2147483647 - 1000
 )
@@ -27,6 +29,7 @@ func InitConsumer() *kafka.Consumer {
 	var kafkaconf = &kafka.ConfigMap{
 		"api.version.request":       "true",
 		"auto.offset.reset":         "latest",
+		"client.id":                 "my_test_confluent_kafka_go_client",
 		"heartbeat.interval.ms":     3000,
 		"session.timeout.ms":        30000,
 		"max.poll.interval.ms":      120000,
@@ -51,13 +54,15 @@ func DoConsume() error {
 		return err
 	}
 
+	cnt := 0
+
 	for {
 		msg, err := consumer.ReadMessage(-1)
 		if err == nil {
-			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+			cnt++
+			fmt.Printf("[%d]Message on %s: %s\n", cnt, msg.TopicPartition, string(msg.Value))
 		} else {
-			// The client will
-			//automatically try to recover from all errors.
+			// The client will automatically try to recover from all errors.
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 		}
 	}
