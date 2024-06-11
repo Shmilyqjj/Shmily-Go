@@ -12,3 +12,14 @@ func TestDoConsume(t *testing.T) {
 func TestDoProduce(t *testing.T) {
 	DoProduce()
 }
+
+//func TestManuallyOffsetConsumer(t *testing.T) {
+//	err := ManuallyOffsetConsumer()
+//	if err != nil {
+//		panic(err)
+//	}
+//}
+
+func TestUseKafkaAdminClient(t *testing.T) {
+	UseKafkaAdminClient()
+}

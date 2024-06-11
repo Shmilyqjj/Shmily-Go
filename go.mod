@@ -7,10 +7,11 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/cloudwego/hertz v0.7.0
 	github.com/confluentinc/confluent-kafka-go v1.9.2
-	github.com/google/uuid v1.5.0
+	github.com/confluentinc/confluent-kafka-go/v2 v2.4.0
+	github.com/google/uuid v1.6.0
 	github.com/mqu/go-notify v0.0.0-20130719194048-ef6f6f49d093
 	github.com/segmentio/kafka-go v0.4.47
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/trinodb/trino-go-client v0.312.0
 	github.com/valyala/fasthttp v1.50.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -29,9 +30,9 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20230111030713-bf00bc1b83b6 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/henrylee2cn/ameda v1.4.10 // indirect
@@ -41,9 +42,8 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.3 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/klauspost/compress v1.16.3 // indirect
+	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-gtk v0.0.0-20191030024613-af2e013261f5 // indirect
 	github.com/nyaruka/phonenumbers v1.0.55 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
@@ -55,12 +55,10 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/tools v0.9.3 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/dnsutils.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/gokrb5.v6 v6.1.1 // indirect
