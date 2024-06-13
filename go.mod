@@ -6,7 +6,6 @@ require (
 	github.com/Shopify/sarama v1.38.1
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/cloudwego/hertz v0.7.0
-	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/confluentinc/confluent-kafka-go/v2 v2.4.0
 	github.com/google/uuid v1.6.0
 	github.com/mqu/go-notify v0.0.0-20130719194048-ef6f6f49d093
@@ -44,6 +43,7 @@ require (
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-gtk v0.0.0-20191030024613-af2e013261f5 // indirect
 	github.com/nyaruka/phonenumbers v1.0.55 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
