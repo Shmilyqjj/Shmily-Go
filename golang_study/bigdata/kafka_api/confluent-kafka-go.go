@@ -17,6 +17,12 @@ import (
 )
 
 // confluent-kafka-go配置参考librdkafka的配置https://docs.confluent.io/platform/current/clients/librdkafka/html/md_CONFIGURATION.html
+// 由于confluent-kafka-go会调用C库librdkafka，编译时不能禁用CGO,当你的Go程序需要调用C库或依赖于C代码时，必须启用CGO（CGO_ENABLED=1），否则无法编译通过，报错undefined xxx
+
+/**
+CGO_ENABLED=1：启用 CGO。这允许 Go 程序调用 C 代码并链接 C 库。在编译过程中，如果你的 Go 代码中包含对 C 代码的引用，这个设置是必要的。
+CGO_ENABLED=0：禁用 CGO。这意味着编译器将忽略所有的 C 代码和 C 库链接。这对于构建完全独立的二进制文件非常有用，因为禁用 CGO 后生成的二进制文件不需要任何外部 C 库的支持。
+*/
 
 const (
 	INT32_MAX     = 2147483647 - 1000
