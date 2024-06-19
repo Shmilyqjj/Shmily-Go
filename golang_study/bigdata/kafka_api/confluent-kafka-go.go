@@ -273,54 +273,93 @@ func ManuallyOffsetConsumer() error {
 	return nil
 }
 
-//func ManuallyOffsetConsumer() error {
-//	// 手动提交Offset的消费  批处理，达到一定条数过时间后进行批处理
-//	brokers := "localhost:9092"
-//	topics := []string{"qjj"}
-//	group := "confluent-kafka-group"
-//	//batchInterval := 5 * time.Second
-//	//maxBatchSize := 1000
-//	//file := "/home/shmily/Downloads/Temp/a.txt"
-//	configMap := kafka.ConfigMap{
-//		"bootstrap.servers":         brokers,
-//		"api.version.request":       "true",
-//		"auto.offset.reset":         "latest",
-//		"client.id":                 "confluent_kafka_go_client",
-//		"heartbeat.interval.ms":     3000,
-//		"session.timeout.ms":        30000,
-//		"max.poll.interval.ms":      120000,
-//		"fetch.max.bytes":           1024000,
-//		"max.partition.fetch.bytes": 256000,
-//		//"enable.auto.commit":        false, // 关闭自动提交偏移量（手动提交）
-//		"enable.auto.offset.store": false, // 关闭自动存储偏移量（手动存储）
-//		"group.id":                 group}
-//
-//	consumer, err := kafka.NewConsumer(&configMap)
-//	if err != nil {
-//		return err
-//	}
-//
-//	defer consumer.Close()
-//
-//	// 订阅的Topics列表
-//	err = consumer.SubscribeTopics(topics, nil)
-//	if err != nil {
-//		return err
-//	}
-//
-//	logrus.Infof("Consumer inited.")
-//
-//	for {
-//		msg, err := consumer.ReadMessage(-1)
-//		if err != nil {
-//			logrus.Warnf("Consumer read message error: %v (%v)\n", err, msg)
-//		} else {
-//			fmt.Printf("消费到消息 %v \n", msg)
-//		}
-//
-//	}
-//
-//}
+func ManuallyOffsetConsume() error {
+	// 手动提交Offset的消费 到达一定条数做批处理  ali写的
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":  "localhost:9092",
+		"group.id":           "confluent-kafka-group",
+		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": "false", // disable auto commit
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer c.Close()
+
+	c.SubscribeTopics([]string{"qjj"}, nil)
+
+	// 用于捕获信号以优雅关闭消费者
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+
+	run := true
+	batchCnt := 0
+	totalCnt := 0
+	const batchSize = 10
+
+	// <string, TopicPartition>, 用于记录每个分区的最大位点
+	offsetsMap := make(map[string]kafka.TopicPartition)
+
+	for run {
+		select {
+		case sig := <-sigchan:
+			logrus.Infof("Caught signal %v: terminating\n", sig)
+			run = false
+		default:
+			msg, err := c.ReadMessage(-1)
+			if err == nil {
+				batchCnt++
+				totalCnt++
+				fmt.Printf("[cnt:%d]Message on %s: %s\n", totalCnt, msg.TopicPartition, string(msg.Value))
+
+				// 记录位点
+				key := fmt.Sprintf("%s-%d", *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
+				tp := msg.TopicPartition
+				if existingTp, ok := offsetsMap[key]; ok {
+					if msg.TopicPartition.Offset > existingTp.Offset {
+						tp.Offset = msg.TopicPartition.Offset
+					} else {
+						tp = existingTp
+					}
+				}
+				offsetsMap[key] = tp
+
+				// 批量提交
+				if batchCnt >= batchSize {
+					commitOffsets(c, offsetsMap)
+					offsetsMap = make(map[string]kafka.TopicPartition)
+					batchCnt = 0
+				}
+			} else if !err.(kafka.Error).IsTimeout() {
+				// The client will automatically try to recover from all errors.
+				// Timeout is not considered an error because it is raised by
+				// ReadMessage in absence of messages.
+				logrus.Errorf("Consumer error: %v (%v)\n", err, msg)
+			}
+		}
+	}
+
+	// 程序优雅关闭前提交最后一批位点
+	logrus.Infoln("Committing offsets before shutting down...")
+	commitOffsets(c, offsetsMap)
+	return nil
+}
+
+// commitOffsets 提交当前的偏移量
+func commitOffsets(c *kafka.Consumer, offsetsMap map[string]kafka.TopicPartition) {
+	var offsets []kafka.TopicPartition
+	for _, tp := range offsetsMap {
+		tp.Offset++ // 提交下一个位点
+		offsets = append(offsets, tp)
+	}
+
+	_, err := c.CommitOffsets(offsets)
+	if err != nil {
+		fmt.Printf("Failed to commit offsets: %v\n", err)
+	} else {
+		fmt.Printf("Successfully committed offsets: %v\n", offsets)
+	}
+}
 
 func appendToFile(data *bytes.Buffer, path string) error {
 	s := data.String()
