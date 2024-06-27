@@ -160,12 +160,12 @@ func SampleManuallyOffsetConsumer() error {
 }
 
 func ManuallyOffsetConsumer() error {
-	// 手动提交Offset的消费  批处理，达到一定条数过时间后进行批处理
+	// 手动提交Offset的消费  批处理，达到一定条数或时间后进行批处理
 	brokers := "localhost:9092"
 	topics := []string{"qjj"}
 	group := "confluent-kafka-group"
 	batchInterval := 5 * time.Second
-	maxBatchSize := 1000
+	maxBatchSize := 10000
 
 	configMap := kafka.ConfigMap{
 		"bootstrap.servers":         brokers,
@@ -225,7 +225,7 @@ func ManuallyOffsetConsumer() error {
 				continue
 			}
 			// 执行批量数据处理逻辑
-			time.Sleep(1 * time.Second)
+			//time.Sleep(1 * time.Second)
 			s := dataBuffer.String()
 			//println(s)
 			logrus.WithField("Trigger", "TIME").Infof("totalReadMsg: %d curSize: %d batch_size: %d \n", totalReadMsg, curSize, len(strings.Split(s, "\n")))
@@ -254,7 +254,7 @@ func ManuallyOffsetConsumer() error {
 				dataBuffer.Write([]byte(LineDelimiter))
 			} else {
 				// 执行批量数据处理逻辑
-				time.Sleep(1 * time.Second)
+				//time.Sleep(1 * time.Second)
 				s := dataBuffer.String()
 				//println(s)
 				logrus.WithField("Trigger", "SIZE").Infof("totalReadMsg: %d curSize: %d batch_size: %d \n", totalReadMsg, curSize, len(strings.Split(s, "\n")))
@@ -295,7 +295,7 @@ func ManuallyOffsetConsume() error {
 	run := true
 	batchCnt := 0
 	totalCnt := 0
-	const batchSize = 10
+	const batchSize = 10000
 
 	// <string, TopicPartition>, 用于记录每个分区的最大位点
 	offsetsMap := make(map[string]kafka.TopicPartition)
@@ -310,7 +310,7 @@ func ManuallyOffsetConsume() error {
 			if err == nil {
 				batchCnt++
 				totalCnt++
-				fmt.Printf("[cnt:%d]Message on %s: %s\n", totalCnt, msg.TopicPartition, string(msg.Value))
+				//fmt.Printf("[cnt:%d]Message on %s: %s\n", totalCnt, msg.TopicPartition, string(msg.Value))
 
 				// 记录位点
 				key := fmt.Sprintf("%s-%d", *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
@@ -326,6 +326,7 @@ func ManuallyOffsetConsume() error {
 
 				// 批量提交
 				if batchCnt >= batchSize {
+					fmt.Printf("[batch_cnt:%d]\n", totalCnt)
 					commitOffsets(c, offsetsMap)
 					offsetsMap = make(map[string]kafka.TopicPartition)
 					batchCnt = 0
