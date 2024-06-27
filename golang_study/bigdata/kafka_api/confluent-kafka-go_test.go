@@ -20,6 +20,13 @@ func TestManuallyOffsetConsumer(t *testing.T) {
 	}
 }
 
+func TestManuallyOffsetConsumerV1(t *testing.T) {
+	err := ManuallyOffsetConsumerV1()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestManuallyOffsetConsume(t *testing.T) {
 	err := ManuallyOffsetConsume()
 	if err != nil {
