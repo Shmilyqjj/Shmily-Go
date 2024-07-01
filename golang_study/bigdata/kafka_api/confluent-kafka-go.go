@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	//"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -273,6 +274,205 @@ func ManuallyOffsetConsumer() error {
 	return nil
 }
 
+func ManuallyOffsetConsumerByPartition() error {
+	// 按分区隔离消费（分区并发消费） 手动提交Offset  批处理，达到一定条数或时间后进行批处理
+	// TODO: 已知的问题：启动时消费组将处于rebalancing状态，会导致数据重复消费;待rebalancing结束后，数据消费正常
+	brokers := "127.0.0.1:9092"
+	topic := "qjj"
+	group := "confluent-kafka-group"
+	batchInterval := 5 * time.Second
+	maxBatchSize := 10000
+	configMap := kafka.ConfigMap{
+		"bootstrap.servers":         brokers,
+		"api.version.request":       "true",
+		"auto.offset.reset":         "latest",
+		"client.id":                 "confluent_kafka_go_client",
+		"heartbeat.interval.ms":     2000,   // 不能设置很高，否则心跳间隔过久会导致消费组持续rebalancing
+		"session.timeout.ms":        20000,  // session.timeout.ms/heartbeat.interval.ms = 10 约10次heartbeat超时后会将“尸位素餐”的consumer剔出
+		"max.poll.interval.ms":      300000, // 设置长一些，避免因批数据在处理时耗时过长导致rebalance（这个时间要超过批数据处理的时间）
+		"fetch.max.bytes":           1024000,
+		"max.partition.fetch.bytes": 256000,
+		"enable.auto.commit":        false, // 关闭自动提交偏移量（手动提交）
+		"enable.auto.offset.store":  false, // 关闭自动存储偏移量（手动存储）
+		"group.id":                  group}
+
+	// 获取Topic-Partition信息
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers": brokers,
+		"group.id":          group,
+		"auto.offset.reset": "latest",
+	})
+	if err != nil {
+		return err
+	}
+	err = c.Subscribe(topic, nil)
+	if err != nil {
+		return err
+	}
+	metadata, err := c.GetMetadata(&topic, false, -1)
+	partitionsMeta := (metadata).Topics[topic].Partitions
+	var tpsWithoutOffsets []kafka.TopicPartition
+	for _, partition := range partitionsMeta {
+		tp := kafka.TopicPartition{
+			Topic:     &topic,
+			Partition: partition.ID,
+		}
+		tpsWithoutOffsets = append(tpsWithoutOffsets, tp)
+	}
+	groupsPartitions := []kafka.ConsumerGroupTopicPartitions{
+		kafka.ConsumerGroupTopicPartitions{
+			Group:      group,
+			Partitions: tpsWithoutOffsets,
+		},
+	}
+
+	// 获取group内每个partition的offsets
+	adminCli, err := kafka.NewAdminClient(&kafka.ConfigMap{
+		"bootstrap.servers": brokers,
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Print("init kafka admin client success\n")
+
+	// 获取带offset的完整分区信息
+	res, err := adminCli.ListConsumerGroupOffsets(context.Background(), groupsPartitions)
+	if err != nil {
+		panic(err)
+	}
+	offsetMap := map[string]map[int32]kafka.Offset{}
+	offsetMap[topic] = map[int32]kafka.Offset{}
+	var tps []kafka.TopicPartition
+	for _, partition := range res.ConsumerGroupsTopicPartitions {
+		partitions := partition.Partitions
+		for _, topicPartition := range partitions {
+			tps = append(tps, topicPartition)
+		}
+	}
+
+	// 每个分区分别用goroutine进行消费
+	var wg sync.WaitGroup
+	for _, tp := range tps {
+		wg.Add(1)
+		go func(topicPartition kafka.TopicPartition) {
+			defer wg.Done()
+			//cm := kafka.ConfigMap{}
+			//for s, value := range configMap {
+			//	cm.SetKey(s, value)
+			//}
+			//cm.SetKey("group.instance.id", fmt.Sprintf("group_instance_%s", uuid.New().String()))
+			pConsumer, e := kafka.NewConsumer(&configMap)
+			if e != nil {
+				logrus.Fatalf("failed to create a new consumer for [Topic:%s Partition:%d], err: %v \n", *topicPartition.Topic, topicPartition.Partition, e)
+			}
+			defer pConsumer.Close()
+			e = pConsumer.Subscribe(topic, nil)
+			if e != nil {
+				logrus.Fatalf("failed to subscribe topic %s, err:%v \n", topic, e)
+			}
+			err = pConsumer.Assign([]kafka.TopicPartition{topicPartition})
+			if err != nil {
+				log.Fatalf("Failed to assign partition: %s \n", err)
+			}
+			logrus.Infof("Consumer inited for [Topic:%s Partition:%d]", *topicPartition.Topic, topicPartition.Partition)
+
+			// 定时刷新定时器
+			flushTicker := time.NewTicker(batchInterval)
+			defer flushTicker.Stop()
+
+			// 消费消息
+			totalReadMsg := 0
+			msgChan := make(chan *kafka.Message, 1)
+			defer close(msgChan)
+			go func() {
+				for {
+					msg, err := pConsumer.ReadMessage(-1)
+					if err != nil {
+						logrus.Warnf("Consumer read message error: %v (%v)\n", err, msg)
+					} else {
+						msgChan <- msg
+						totalReadMsg++
+					}
+				}
+			}()
+
+			// 批处理与位点提交
+			curSize := 0
+			dataBuffer := &bytes.Buffer{}
+			//offsets := make(map[string]kafka.TopicPartition)
+			for {
+				select {
+				case <-flushTicker.C:
+					// 时间触发器 触发batch
+					if dataBuffer.Len() == 0 {
+						continue
+					}
+					// 执行批量数据处理逻辑
+					//time.Sleep(1 * time.Second)
+					s := dataBuffer.String()
+					//println(s)
+					logrus.WithField("Trigger", "TIME").Infof("[partition_id: %d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
+
+					// 提交Offset并重新攒批
+					_, e := pConsumer.Commit()
+					//e := commitOffsets(pConsumer, offsets)
+					//offsets = make(map[string]kafka.TopicPartition)
+					if e != nil {
+						logrus.WithField("Trigger", "SIZE").Errorf("Failed to commit offset, err: %v \n", e)
+						break
+					}
+
+					curSize = 0
+					dataBuffer.Reset()
+				case message, ok := <-msgChan:
+					if !ok {
+						break
+					}
+					dataBuffer.Write(message.Value)
+
+					// 记录位点
+					_, err := pConsumer.StoreMessage(message)
+					if err != nil {
+						logrus.Infof("Failed to store message, err: %v \n", err)
+						continue
+					}
+					//key := fmt.Sprintf("%s-%d", *message.TopicPartition.Topic, message.TopicPartition.Partition)
+					//tp := message.TopicPartition
+					//if existingTp, ok := offsets[key]; ok {
+					//	if message.TopicPartition.Offset > existingTp.Offset {
+					//		tp.Offset = message.TopicPartition.Offset
+					//	} else {
+					//		tp = existingTp
+					//	}
+					//}
+					//offsets[key] = tp
+					curSize++
+					if curSize < maxBatchSize {
+						dataBuffer.Write([]byte(LineDelimiter))
+					} else {
+						// 执行批量数据处理逻辑
+						//time.Sleep(1 * time.Second)
+						s := dataBuffer.String()
+						logrus.WithField("Trigger", "SIZE").Infof("[partition_id: %d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
+						_, e := pConsumer.Commit()
+						//e := commitOffsets(pConsumer, offsets)
+						//offsets = make(map[string]kafka.TopicPartition)
+						if e != nil {
+							logrus.WithField("Trigger", "SIZE").Errorf("Failed to commit offset, err: %v \n", e)
+							break
+						}
+
+						curSize = 0
+						dataBuffer.Reset()
+					}
+				}
+			}
+		}(tp)
+	}
+	wg.Wait()
+	return nil
+}
+
 func ManuallyOffsetConsumerV1() error {
 	// 手动提交Offset的消费  批处理，达到一定条数或时间后进行批处理
 	// 较ManuallyOffsetConsumer相比，手动维护消费组的offset而不调用storeMessage 提升部分性能
@@ -289,8 +489,8 @@ func ManuallyOffsetConsumerV1() error {
 		"client.id":                 "confluent_kafka_go_client",
 		"heartbeat.interval.ms":     3000,
 		"session.timeout.ms":        30000,
-		"max.poll.interval.ms":      120000,
-		"fetch.max.bytes":           1024000,
+		"max.poll.interval.ms":      20000,
+		"fetch.max.bytes":           30000,
 		"max.partition.fetch.bytes": 256000,
 		"enable.auto.commit":        false, // 关闭自动提交偏移量（手动提交）
 		"enable.auto.offset.store":  false, // 关闭自动存储偏移量（手动存储）

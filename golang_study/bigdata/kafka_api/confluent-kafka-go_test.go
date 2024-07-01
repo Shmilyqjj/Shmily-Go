@@ -27,6 +27,13 @@ func TestManuallyOffsetConsumerV1(t *testing.T) {
 	}
 }
 
+func TestManuallyOffsetConsumerByPartition(t *testing.T) {
+	err := ManuallyOffsetConsumerByPartition()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestManuallyOffsetConsume(t *testing.T) {
 	err := ManuallyOffsetConsume()
 	if err != nil {
