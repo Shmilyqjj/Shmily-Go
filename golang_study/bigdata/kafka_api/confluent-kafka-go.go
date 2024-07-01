@@ -276,7 +276,6 @@ func ManuallyOffsetConsumer() error {
 
 func ManuallyOffsetConsumerByPartition() error {
 	// 按分区隔离消费（分区并发消费） 手动提交Offset  批处理，达到一定条数或时间后进行批处理
-	// TODO: 已知的问题：启动时消费组将处于rebalancing状态，会导致数据重复消费;待rebalancing结束后，数据消费正常
 	brokers := "127.0.0.1:9092"
 	topic := "qjj"
 	group := "confluent-kafka-group"
@@ -356,11 +355,6 @@ func ManuallyOffsetConsumerByPartition() error {
 		wg.Add(1)
 		go func(topicPartition kafka.TopicPartition) {
 			defer wg.Done()
-			//cm := kafka.ConfigMap{}
-			//for s, value := range configMap {
-			//	cm.SetKey(s, value)
-			//}
-			//cm.SetKey("group.instance.id", fmt.Sprintf("group_instance_%s", uuid.New().String()))
 			pConsumer, e := kafka.NewConsumer(&configMap)
 			if e != nil {
 				logrus.Fatalf("failed to create a new consumer for [Topic:%s Partition:%d], err: %v \n", *topicPartition.Topic, topicPartition.Partition, e)
@@ -374,6 +368,12 @@ func ManuallyOffsetConsumerByPartition() error {
 			if err != nil {
 				log.Fatalf("Failed to assign partition: %s \n", err)
 			}
+
+			err = checkConsumerGroup(adminCli, group)
+			if err != nil {
+				panic(err)
+			}
+
 			logrus.Infof("Consumer inited for [Topic:%s Partition:%d]", *topicPartition.Topic, topicPartition.Partition)
 
 			// 定时刷新定时器
@@ -408,17 +408,16 @@ func ManuallyOffsetConsumerByPartition() error {
 						continue
 					}
 					// 执行批量数据处理逻辑
-					//time.Sleep(1 * time.Second)
 					s := dataBuffer.String()
 					//println(s)
-					logrus.WithField("Trigger", "TIME").Infof("[partition_id: %d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
+					logrus.WithField("Trigger", "TIME").Infof("[Partition:%d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
 
 					// 提交Offset并重新攒批
 					_, e := pConsumer.Commit()
 					//e := commitOffsets(pConsumer, offsets)
 					//offsets = make(map[string]kafka.TopicPartition)
 					if e != nil {
-						logrus.WithField("Trigger", "SIZE").Errorf("Failed to commit offset, err: %v \n", e)
+						logrus.WithField("Trigger", "TIME").Errorf("Failed to commit offset, err: %v \n", e)
 						break
 					}
 
@@ -451,9 +450,8 @@ func ManuallyOffsetConsumerByPartition() error {
 						dataBuffer.Write([]byte(LineDelimiter))
 					} else {
 						// 执行批量数据处理逻辑
-						//time.Sleep(1 * time.Second)
 						s := dataBuffer.String()
-						logrus.WithField("Trigger", "SIZE").Infof("[partition_id: %d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
+						logrus.WithField("Trigger", "SIZE").Infof("[Partition:%d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
 						_, e := pConsumer.Commit()
 						//e := commitOffsets(pConsumer, offsets)
 						//offsets = make(map[string]kafka.TopicPartition)
@@ -470,6 +468,25 @@ func ManuallyOffsetConsumerByPartition() error {
 		}(tp)
 	}
 	wg.Wait()
+	return nil
+}
+
+func checkConsumerGroup(adminCli *kafka.AdminClient, group string) error {
+	// 消费组状态检测 直到消费组状态为stable而非rebalancing方可结束
+	result, err := adminCli.DescribeConsumerGroups(context.Background(), []string{group})
+	if err != nil {
+		log.Fatalf("Failed to DescribeConsumerGroups, err: %v \n", err)
+		return err
+	}
+	description := result.ConsumerGroupDescriptions[0]
+	state := description.State
+	if state == kafka.ConsumerGroupStatePreparingRebalance || state == kafka.ConsumerGroupStateCompletingRebalance {
+		// 消费组处于rebalancing状态，此时会发生数据重复消费以及首批offset提交失败的情况
+		// 故检测消费组状态并等待一会儿，直到消费组不再处于rebalancing状态
+		logrus.Warnf("Consumer group %s is in rebalancing state, waiting...\n", group)
+		time.Sleep(10 * time.Second)
+		return checkConsumerGroup(adminCli, group)
+	}
 	return nil
 }
 
