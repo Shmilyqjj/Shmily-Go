@@ -339,8 +339,6 @@ func ManuallyOffsetConsumerByPartition() error {
 	if err != nil {
 		panic(err)
 	}
-	offsetMap := map[string]map[int32]kafka.Offset{}
-	offsetMap[topic] = map[int32]kafka.Offset{}
 	var tps []kafka.TopicPartition
 	for _, partition := range res.ConsumerGroupsTopicPartitions {
 		partitions := partition.Partitions
@@ -369,12 +367,12 @@ func ManuallyOffsetConsumerByPartition() error {
 				log.Fatalf("Failed to assign partition: %s \n", err)
 			}
 
+			// 消费组状态检测 避免rebalancing状态导致重复消费
 			err = checkConsumerGroup(adminCli, group)
 			if err != nil {
 				panic(err)
 			}
-
-			logrus.Infof("Consumer inited for [Topic:%s Partition:%d]", *topicPartition.Topic, topicPartition.Partition)
+			logrus.Infof("Consumer inited for [Topic:%s Partition:%d Group:%s]", *topicPartition.Topic, topicPartition.Partition, group)
 
 			// 定时刷新定时器
 			flushTicker := time.NewTicker(batchInterval)
