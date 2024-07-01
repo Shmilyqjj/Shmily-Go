@@ -332,7 +332,7 @@ func ManuallyOffsetConsumerByPartition() error {
 	if err != nil {
 		return err
 	}
-	fmt.Print("init kafka admin client success\n")
+	logrus.Infoln("Init kafka admin client success")
 
 	// 获取带offset的完整分区信息
 	res, err := adminCli.ListConsumerGroupOffsets(context.Background(), groupsPartitions)
@@ -397,7 +397,6 @@ func ManuallyOffsetConsumerByPartition() error {
 			// 批处理与位点提交
 			curSize := 0
 			dataBuffer := &bytes.Buffer{}
-			//offsets := make(map[string]kafka.TopicPartition)
 			for {
 				select {
 				case <-flushTicker.C:
@@ -407,13 +406,10 @@ func ManuallyOffsetConsumerByPartition() error {
 					}
 					// 执行批量数据处理逻辑
 					s := dataBuffer.String()
-					//println(s)
 					logrus.WithField("Trigger", "TIME").Infof("[Partition:%d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
 
 					// 提交Offset并重新攒批
 					_, e := pConsumer.Commit()
-					//e := commitOffsets(pConsumer, offsets)
-					//offsets = make(map[string]kafka.TopicPartition)
 					if e != nil {
 						logrus.WithField("Trigger", "TIME").Errorf("Failed to commit offset, err: %v \n", e)
 						break
@@ -433,16 +429,7 @@ func ManuallyOffsetConsumerByPartition() error {
 						logrus.Infof("Failed to store message, err: %v \n", err)
 						continue
 					}
-					//key := fmt.Sprintf("%s-%d", *message.TopicPartition.Topic, message.TopicPartition.Partition)
-					//tp := message.TopicPartition
-					//if existingTp, ok := offsets[key]; ok {
-					//	if message.TopicPartition.Offset > existingTp.Offset {
-					//		tp.Offset = message.TopicPartition.Offset
-					//	} else {
-					//		tp = existingTp
-					//	}
-					//}
-					//offsets[key] = tp
+
 					curSize++
 					if curSize < maxBatchSize {
 						dataBuffer.Write([]byte(LineDelimiter))
@@ -451,8 +438,6 @@ func ManuallyOffsetConsumerByPartition() error {
 						s := dataBuffer.String()
 						logrus.WithField("Trigger", "SIZE").Infof("[Partition:%d][Commit offset]totalReadMsg: %d curSize: %d batch_size: %d \n", topicPartition.Partition, totalReadMsg, curSize, len(strings.Split(s, "\n")))
 						_, e := pConsumer.Commit()
-						//e := commitOffsets(pConsumer, offsets)
-						//offsets = make(map[string]kafka.TopicPartition)
 						if e != nil {
 							logrus.WithField("Trigger", "SIZE").Errorf("Failed to commit offset, err: %v \n", e)
 							break
