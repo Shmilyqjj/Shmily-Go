@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -12,6 +13,7 @@ func main() {
 	splitStr()
 	replaceStr()
 	invalidUtf8String()
+	println(HandleNonUtf8Str("\xcf\xcf067"))
 }
 
 func strConcat() {
@@ -48,11 +50,15 @@ func invalidUtf8String() {
 	s := "\xcf\xcf067" // invalid UTF-8 string
 	if !utf8.ValidString(s) {
 		logrus.Warn("String is not valid UTF-8, do sanitizeString")
-		s = sanitizeString(s)
+		sc1 := sanitizeString(s)
+		fmt.Println("Cleaned string:", sc1)
+		sc2 := strconv.QuoteToASCII(s)
+		fmt.Println("Cleaned2 string:", sc2)
 	} else {
 		logrus.Infoln("String is valid UTF-8")
+		println(s)
 	}
-	fmt.Println("Cleaned string:", s)
+
 }
 
 /*
@@ -71,4 +77,22 @@ func sanitizeString(s string) string {
 		s = s[size:]
 	}
 	return string(validStr)
+}
+
+func HandleNonUtf8Str(input string) string {
+	if !utf8.ValidString(input) {
+		validStr := make([]rune, 0, len(input))
+		for len(input) > 0 {
+			r, size := utf8.DecodeRuneInString(input)
+			if r == utf8.RuneError && size == 1 {
+				validStr = append(validStr, '?')
+			} else {
+				validStr = append(validStr, r)
+			}
+			input = input[size:]
+		}
+		return string(validStr)
+	} else {
+		return input
+	}
 }
